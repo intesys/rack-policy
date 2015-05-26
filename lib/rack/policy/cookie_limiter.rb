@@ -29,6 +29,10 @@ module Rack
         @consent_token ||= options[:consent_token] || CONSENT_TOKEN
       end
 
+      def paranoid
+        @paranoid ||= options[:paranoid] || true
+      end
+
       def expires
         Time.parse(options[:expires]) if options[:expires]
       end
@@ -43,7 +47,7 @@ module Rack
         accepts?(request)
         @status, @headers, @body = @app.call(env)
         response = Rack::Response.new body, status, headers
-        clear_cookies!(request, response) unless allowed?(request)
+        clear_cookies!(request, response) unless allowed?(request) || !paranoid
         finish
       end
 
@@ -53,7 +57,7 @@ module Rack
         if ( request.cookies.has_key?(consent_token.to_s) )
           @env['rack-policy.consent'] = 'true'
         else
-          @env.delete(HTTP_COOKIE) if @env[HTTP_COOKIE]
+          @env.delete(HTTP_COOKIE) if @env[HTTP_COOKIE] && paranoid
           @env['rack-policy.consent'] = nil
         end
       end
