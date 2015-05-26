@@ -50,6 +50,25 @@ RSpec.describe Rack::Policy::CookieLimiter do
       expect(last_response).to be_ok
       expect(last_response.headers['Cache-Control']).to match(/must-revalidate/)
     end
+
+    context 'no paranoid' do
+      it 'preserves cookie header' do
+        mock_app with_headers('Set-Cookie' => "cookie_limiter=true; path=/;"), paranoid: false
+        request '/'
+        expect(last_response).to be_ok
+        expect(last_response.headers['Set-Cookie']).to_not eq(nil)
+      end
+
+      it 'preserves all the cookies' do
+        mock_app {
+          use Rack::Policy::CookieLimiter, :consent_token => 'consent', paranoid: false
+          run DummyApp
+        }
+        set_cookie ["foo=1", "bar=2"]
+        request '/'
+        expect(last_request.cookies).to eq({"bar" => "2", "foo" => "1"})
+      end
+    end
   end
 
   context 'with consent' do

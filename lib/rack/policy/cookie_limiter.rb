@@ -30,7 +30,7 @@ module Rack
       end
 
       def paranoid
-        @paranoid ||= options[:paranoid] || true
+        @paranoid ||= options.fetch(:paranoid, true)
       end
 
       def expires
